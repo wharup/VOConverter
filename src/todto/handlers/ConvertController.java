@@ -55,18 +55,26 @@ public class ConvertController {
         for (ICompilationUnit type : types) {
             String name = type.getElementName().replace(".java", "");
             if(name.endsWith("SVO")) {
-                svo = new TypeProxy(this, type);
+                svo = new TypeProxy(type);
             } else if (name.endsWith("DVO")) {
-                dvo = new TypeProxy(this, type);
+                dvo = new TypeProxy(type);
             } else {
                 debug("UNIDENTIFIED TYPE FOUND! : %s", type.getElementName());
             }
         }
         debug("----- ----- ----- ----- ----- -----");
-        debug(" SVO: %s\n", svo.toString());
-        debug(" DVO: %s\n", dvo.toString());
+        debug(" SVO: %s\n", getFullName(svo));
+        debug(" DVO: %s\n", getFullName(dvo));
         debug("----- ----- ----- ----- ----- -----");
         return types;
+    }
+
+    private String getFullName(TypeProxy type) {
+        return type == null ? "NOT_FOUND" : type.getFullName();
+    }
+    
+    private String getName(TypeProxy type) {
+        return type == null ? "NOT_FOUND" : type.getName();
     }
     
     private List<ICompilationUnit> getSelectedClasses(ExecutionEvent event) {
@@ -101,8 +109,8 @@ public class ConvertController {
     private String msgSuccessGenerateMethods(List<String> operations) {
         String result = "";
            result += format("메소드 생성에 성공하였습니다.\n");
-           result += format("SVO = %s\n", svo.getName());
-           result += format("DVO = %s\n ", dvo.getName());
+           result += format("SVO = %s\n", getName(svo));
+           result += format("DVO = %s\n ", getName(dvo));
            result += format("\n생성 결과:\n");
            for (String operation : operations) {
                result += format("\t%s\n", operation);
@@ -113,8 +121,8 @@ public class ConvertController {
     private String msgCannotFindSVODVO(List<ICompilationUnit> units) {
         String msg = "";
         msg += format("SVO, DVO를 찾지 못했습니다!\n");
-        msg += format("SVO = %s\n", svo.getFullName());
-        msg += format("DVO = %s\n ", dvo.getFullName());
+        msg += format("SVO = %s\n", getFullName(svo));
+        msg += format("DVO = %s\n ", getFullName(dvo));
         msg += "\n";
         msg += format("> found types (%d)\n", units.size());
         int i = 0;
@@ -128,8 +136,8 @@ public class ConvertController {
         String msg = "";
         msg += format("SVO에 생성할 메소드가 모두 존재합니다! (toDVO, fromDVO)\n");
         msg += format("\n");
-        msg += format("SVO = %s\n", svo.getFullName());
-        msg += format("DVO = %s\n", dvo.getFullName());
+        msg += format("SVO = %s\n", getFullName(svo));
+        msg += format("DVO = %s\n", getFullName(dvo));
         msg += "\n";
         return msg;
     }

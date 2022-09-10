@@ -12,16 +12,15 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 
 public class TypeProxy {
-    private final ConvertController convertController;
     IType type = null;
     private ICompilationUnit icu;
-    public TypeProxy(ConvertController convertController, ICompilationUnit icu) {
-        this.convertController = convertController;
+    
+    public TypeProxy(ICompilationUnit icu) {
         this.icu = icu;
         this.type = getPrimaryType(icu);
     }
     
-    private IType getPrimaryType(ICompilationUnit icu) {
+    protected IType getPrimaryType(ICompilationUnit icu) {
         try {
             IType[] types = icu.getTypes();
             return types[0];
@@ -36,7 +35,7 @@ public class TypeProxy {
         try {
             IMethod[] methods = type.getMethods();
             for (IMethod m : methods) {
-                this.convertController.debug("%s", m.getKey());
+                debug("%s", m.getKey());
                 result.add(m.getKey());
             }
         } catch (JavaModelException e) {
@@ -53,7 +52,7 @@ public class TypeProxy {
         String toDVO = format("L%s;.fromDVO(Q%s;)V", svoName, dvoName);
         List<String> methods = getMethods();
         for (String method : methods) {
-            this.convertController.debug("%s, %s", method, toDVO);
+            debug("%s, %s", method, toDVO);
             if (method.equals(toDVO)) {
                 return true;
             }
@@ -65,7 +64,7 @@ public class TypeProxy {
         String fromDVO = format("L%s;.toDVO()V", getFullName().replace(".", "/"));
         List<String> methods = getMethods();
         for (String method : methods) {
-            this.convertController.debug("%s, %s", method, fromDVO);
+            debug("%s, %s", method, fromDVO);
             if (method.equals(fromDVO)) {
                 return true;
             }
@@ -135,5 +134,9 @@ public class TypeProxy {
             e.printStackTrace();
             throw new ConvertException("Import 구문 생성 중에 알수 없는 에러가 발생했습니다.");
         }
+    }
+    
+    private static void debug(String format, Object...vars) {
+        System.out.println(String.format(format, vars));
     }
 }

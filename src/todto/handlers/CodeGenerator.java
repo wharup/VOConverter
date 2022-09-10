@@ -41,7 +41,7 @@ public class CodeGenerator {
         
         method += "\n\t//SKIP: SVO에만 있는 필드\n";
         method += svoOnlyFields;
-        method += "\n\t//SKIP: Deep Copy는 제외\n";
+        method += "\t//SKIP: Deep Copy는 제외\n";
         method += deepCopyFields;
         method += "\treturn svo;\n";
         method += "}\n";
@@ -88,7 +88,7 @@ public class CodeGenerator {
 
         method += "\n\t//SKIP: DVO에만 있는 필드\n";
         method += dvoOnlyFields;
-        method += "\n\t//SKIP: Deep Copy는 제외\n";
+        method += "\t//SKIP: Deep Copy는 제외\n";
         method += deepCopyFields;
         method += "\treturn dvo;\n";
         method += "}\n";
