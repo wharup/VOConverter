@@ -25,7 +25,7 @@ public class CodeGenerator {
         method += format("\t%s svo = new %s();\n", svoName, svoName);
         for (FieldProxy field: svoFields) {
             String fieldName = field.getName();
-            debug("%s,%s,%s", fieldName, field.getSetterMethodName(), field.getGetterMethodName());
+            debug("%s,%s,%s,m=%s", fieldName, field.getSetterMethodName(), field.getGetterMethodName(), field.getMaskType());
             
             FieldProxy dvoField = dvo.getField(fieldName);
             if (dvoField == null) {
@@ -36,7 +36,12 @@ public class CodeGenerator {
                 deepCopyFields += format("\t//svo.%s();\n", field.getSetterMethodName());
                 continue;
             } 
-            method += format("\tsvo.%s(dvo.%s());\n", field.getSetterMethodName(), field.getGetterMethodName());
+            if (field.hasMaskAnnotation()) {
+                method += format("\tsvo.%s(EncryptionUtil.encrypt(dvo.%s()));\n", field.getSetterMethodName(), field.getGetterMethodName());
+            } else {
+                method += format("\tsvo.%s(dvo.%s());\n", field.getSetterMethodName(), field.getGetterMethodName());
+            }
+
         }
         
         method += "\n\t//SKIP: SVO에만 있는 필드\n";
@@ -47,7 +52,7 @@ public class CodeGenerator {
         method += "}\n";
         debug("\n\n%s\n\n", method);
         
-        svo.createMethod(method);
+//        svo.createMethod(method);
         return "Created fromDVO()";
 
     }
@@ -93,7 +98,7 @@ public class CodeGenerator {
         method += "\treturn dvo;\n";
         method += "}\n";
         debug("\n\n%s\n\n", method);
-        svo.createMethod(method);   
+//        svo.createMethod(method);   
         
         return "Created toDVO()";
     }

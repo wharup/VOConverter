@@ -16,8 +16,28 @@ public class TypeProxy {
     private ICompilationUnit icu;
     
     public TypeProxy(ICompilationUnit icu) {
+        try {
+            icu.makeConsistent(null);
+            
+            icu.becomeWorkingCopy(null);
+            icu.reconcile(
+                    ICompilationUnit.NO_AST, 
+                    false /* don't force problem detection */, 
+                    null /* use primary owner */, 
+                    null /* no progress monitor */);
+            
+            boolean hasResourceChanged = icu.hasResourceChanged();
+            boolean hasUnsavedChanges = icu.hasUnsavedChanges();
+            debug("zzz r%s, s%s", hasResourceChanged ? "Y" : "N"
+                , hasUnsavedChanges ? "Y" : "N"
+                );
+        } catch (JavaModelException e) {
+            e.printStackTrace();
+        }
+
         this.icu = icu;
         this.type = getPrimaryType(icu);
+        
     }
     
     protected IType getPrimaryType(ICompilationUnit icu) {
@@ -35,7 +55,7 @@ public class TypeProxy {
         try {
             IMethod[] methods = type.getMethods();
             for (IMethod m : methods) {
-                debug("%s", m.getKey());
+//                debug("%s", m.getKey());
                 result.add(m.getKey());
             }
         } catch (JavaModelException e) {
@@ -52,7 +72,7 @@ public class TypeProxy {
         String toDVO = format("L%s;.fromDVO(Q%s;)V", svoName, dvoName);
         List<String> methods = getMethods();
         for (String method : methods) {
-            debug("%s, %s", method, toDVO);
+//            debug("%s, %s", method, toDVO);
             if (method.equals(toDVO)) {
                 return true;
             }
@@ -64,7 +84,7 @@ public class TypeProxy {
         String fromDVO = format("L%s;.toDVO()V", getFullName().replace(".", "/"));
         List<String> methods = getMethods();
         for (String method : methods) {
-            debug("%s, %s", method, fromDVO);
+//            debug("%s, %s", method, fromDVO);
             if (method.equals(fromDVO)) {
                 return true;
             }

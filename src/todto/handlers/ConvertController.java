@@ -8,8 +8,9 @@ import java.util.List;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -23,6 +24,11 @@ public class ConvertController {
     TypeProxy dvo = null;
     
     public String generateConvertMethods(ExecutionEvent event) {
+        debug("haha : %s", svo == null ? "null" : svo.toString());
+        debug("haha : %s", dvo == null ? "null" : dvo.toString());
+        svo = null;
+        dvo = null;
+                   
         List<ICompilationUnit> units = getSelectedSVOAndDVO(event);
         
         makeSureSVOAndDVOAreFound(units);
@@ -30,7 +36,7 @@ public class ConvertController {
         makeSureSVOMethodsAreNotExist(units);
 
         List<String> operations = new ArrayList<>();
-        operations.add(CodeGenerator.generateToDVO(dvo, svo));
+//        operations.add(CodeGenerator.generateToDVO(dvo, svo));
         operations.add(CodeGenerator.generateFromDVO(dvo, svo));
 
         return msgSuccessGenerateMethods(operations);
@@ -55,6 +61,7 @@ public class ConvertController {
         for (ICompilationUnit type : types) {
             String name = type.getElementName().replace(".java", "");
             if(name.endsWith("SVO")) {
+                print(type);
                 svo = new TypeProxy(type);
             } else if (name.endsWith("DVO")) {
                 dvo = new TypeProxy(type);
@@ -67,6 +74,27 @@ public class ConvertController {
         debug(" DVO: %s\n", getFullName(dvo));
         debug("----- ----- ----- ----- ----- -----");
         return types;
+    }
+
+    private void print(ICompilationUnit type) {
+//        type.getTypes()[0].getFields()[2].getAnnotations()
+        
+        IField[] fields = null;
+        try {
+            fields = type.getTypes()[0].getFields();
+            for (IField f : fields) {
+//                f.getAnnotations().length[0].getElementName();
+                IAnnotation[] annotations = f.getAnnotations();
+                int length = annotations.length;
+                debug("^^ %s, %s", f, length);
+                for (int i = 0; i < length; i++) {
+                    debug("DBG:  ^^ %s, %s", annotations[i].getElementName(), annotations[i].getElementName());
+                }
+            }
+        } catch (JavaModelException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }                                                                                                                                   
     }
 
     private String getFullName(TypeProxy type) {
@@ -99,6 +127,11 @@ public class ConvertController {
             Object selected = itr.next();
             if (selected instanceof ICompilationUnit) {
                 ICompilationUnit icu = (ICompilationUnit) selected;
+                try {
+                    icu.makeConsistent(null);
+                } catch (JavaModelException e) {
+                    e.printStackTrace();
+                }
                 result.add(icu);
             }
         }
