@@ -13,9 +13,18 @@ import org.eclipse.jdt.core.JavaModelException;
 
 public class TypeProxy {
     IType type = null;
+    String typeString = "";
     private ICompilationUnit icu;
+
+    public String getTypeString() {
+        return typeString;
+    }
+
+    public TypeProxy(ICompilationUnit icu, String typeString) {
+        setCompilatioUnit(icu, typeString);
+    }
     
-    public TypeProxy(ICompilationUnit icu) {
+    private void setCompilatioUnit(ICompilationUnit icu, String typeString) {
         try {
             icu.makeConsistent(null);
             
@@ -37,9 +46,9 @@ public class TypeProxy {
 
         this.icu = icu;
         this.type = getPrimaryType(icu);
-        
+        this.typeString = typeString;
     }
-    
+
     protected IType getPrimaryType(ICompilationUnit icu) {
         try {
             IType[] types = icu.getTypes();
@@ -65,6 +74,18 @@ public class TypeProxy {
         return result;
     }
 
+    public boolean hasMethod(String methodSignature) {
+        List<String> methods = getMethods();
+        for (String method : methods) {
+            debug("%s ^ %s", method, methodSignature);
+            if (method.equals(methodSignature)) {
+                return true;
+            }
+        }
+        return false;
+        
+    }
+    
     public boolean hasFromDVO(TypeProxy dvo) {
         //LCustSVO;.fromDVO(QCustDVO;)V
         String svoName = getFullName().replace(".", "/");
@@ -79,6 +100,7 @@ public class TypeProxy {
         }
         return false;
     }
+    
     public boolean hasToDVO(TypeProxy dvo) {
         //LCustSVO;.fromDVO(QCustDVO;)V
         String fromDVO = format("L%s;.toDVO()V", getFullName().replace(".", "/"));
@@ -92,6 +114,34 @@ public class TypeProxy {
         return false;
     }
     
+    public boolean hasCopyUpperToLower(TypeProxy upper, TypeProxy lower) {
+        //LCustSVO;.fromDVO(QCustDVO;)V
+        String fromDVO = format("L%s;.toDVO()V", getFullName().replace(".", "/"));
+        List<String> methods = getMethods();
+        for (String method : methods) {
+//            debug("%s, %s", method, fromDVO);
+            if (method.equals(fromDVO)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public boolean hasFromLowerMethod(String methodName, TypeProxy upper, TypeProxy lower) {
+        //LCustSVO;.fromDVO(QCustDVO;)V
+        String svoName = upper.getName().replace(".", "/");
+        String dvoName = lower.getName().replace(".", "/");
+        String toDVO = format("L%s;.%s(Q%s;)V", svoName, methodName, dvoName);
+        List<String> methods = getMethods();
+        for (String method : methods) {
+//            debug("%s, %s", method, toDVO);
+            if (method.equals(toDVO)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public String getFullName() {
         return type != null ? type.getFullyQualifiedName() : "NOT FOUND";
     }
@@ -158,5 +208,9 @@ public class TypeProxy {
     
     private static void debug(String format, Object...vars) {
         System.out.println(String.format(format, vars));
+    }
+
+    public String getVariableName() {
+        return getTypeString().toLowerCase();
     }
 }

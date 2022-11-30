@@ -7,100 +7,117 @@ import java.util.List;
 public class CodeGenerator {
 
     
-    public static String generateFromDVO(TypeProxy dvo, TypeProxy svo) {
-        if (svo.hasFromDVO(dvo)) {
-            return "NOT CREATED : fromDVO() exists!";
-        }
-        addImport(svo, dvo);
+    public static String generateFromLower(TypeProxy copyUtil, 
+                                        TypeProxy upper, 
+                                        TypeProxy lower) {
+        addImport(copyUtil, upper);
+        addImport(copyUtil, lower);
 
-        String svoName = svo.getName();
-        String dvoName = dvo.getName();
-
-        List<FieldProxy> svoFields = svo.getFields();
-        String method = "";
-        String svoOnlyFields = "";
+        String upperTypeName = upper.getName();
+        String upperVariableName = upper.getVariableName();
+        String methodName = createFromLowerMethodName(lower);
+        String lowerTypeName = lower.getName();
+        String lowerVariableName = lower.getVariableName();
+        
+        
+        List<FieldProxy> upperFields = upper.getFields();
+        String methodContent = "";
+        String upperOnlyFields = "";
         String deepCopyFields = "";
         
-        method += format("public static %s fromDVO(%s dvo) {\n", svoName, dvoName);
-        method += format("\t%s svo = new %s();\n", svoName, svoName);
-        for (FieldProxy field: svoFields) {
+        methodContent += format("public static %s %s(%s %s) {\n", upperTypeName, methodName, lowerTypeName, lowerVariableName);
+        methodContent += format("\t%s %s = new %s();\n", upperTypeName, upperVariableName, upperTypeName);
+        for (FieldProxy field: upperFields) {
             String fieldName = field.getName();
             debug("%s,%s,%s,m=%s", fieldName, field.getSetterMethodName(), field.getGetterMethodName(), field.getMaskType());
             
-            FieldProxy dvoField = dvo.getField(fieldName);
-            if (dvoField == null) {
-                svoOnlyFields += format("\t//svo.%s();\n", field.getSetterMethodName());
+            FieldProxy lowerField = lower.getField(fieldName);
+            if (lowerField == null) {
+                upperOnlyFields += format("\t//%s.%s();\n", upperVariableName, field.getSetterMethodName());
                 continue;
             }
-            if (dvoField.needDeepCopy()) {
-                deepCopyFields += format("\t//svo.%s();\n", field.getSetterMethodName());
+            if (lowerField.needDeepCopy()) {
+                deepCopyFields += format("\t//%s.%s();\n", upperVariableName, field.getSetterMethodName());
                 continue;
             } 
             if (field.hasMaskAnnotation()) {
-                method += format("\tsvo.%s(EncryptionUtil.encrypt(dvo.%s()));\n", field.getSetterMethodName(), field.getGetterMethodName());
+                methodContent += format("\t%s.%s(EncryptionUtil.encrypt(%s.%s()));\n", upperVariableName, field.getSetterMethodName(), lowerVariableName, field.getGetterMethodName());
             } else {
-                method += format("\tsvo.%s(dvo.%s());\n", field.getSetterMethodName(), field.getGetterMethodName());
+                methodContent += format("\t%s.%s(%s.%s());\n", upperVariableName, field.getSetterMethodName(), lowerVariableName, field.getGetterMethodName());
             }
 
         }
         
-        method += "\n\t//SKIP: SVO에만 있는 필드\n";
-        method += svoOnlyFields;
-        method += "\t//SKIP: Deep Copy는 제외\n";
-        method += deepCopyFields;
-        method += "\treturn svo;\n";
-        method += "}\n";
-        debug("\n\n%s\n\n", method);
+        methodContent += format("\n\t//SKIP: %s에만 있는 필드\n", upperTypeName);
+        methodContent += upperOnlyFields;
+        methodContent += "\t//SKIP: Deep Copy는 제외\n";
+        methodContent += deepCopyFields;
+        methodContent += format("\treturn %s;\n", upperVariableName);
+        methodContent += "}\n";
+        debug("\n\n%s\n\n", methodContent);
         
-//        svo.createMethod(method);
-        return "Created fromDVO()";
+        copyUtil.createMethod(methodContent);
+        return format("Created %s()", methodName);
 
     }
 
-    private static void addImport(TypeProxy svo, TypeProxy dvo) {
-        svo.addImport(dvo.getFullName());
+    private static void addImport(TypeProxy copyUtil, TypeProxy vo) {
+        copyUtil.addImport(vo.getFullName());
     }
 
-    public static String generateToDVO(TypeProxy dvo, TypeProxy svo) {
-        if (svo.hasToDVO(dvo)) {
-            return "NOT CREATED : toDVO() exists!";
-        }
-        addImport(svo, dvo);
+    public static String generateToLower(TypeProxy copyUtil, 
+                                        TypeProxy upper, 
+                                        TypeProxy lower) {
+        addImport(copyUtil, upper);
+        addImport(copyUtil, lower);
         
-        List<FieldProxy> dvoFields = dvo.getFields();
+        List<FieldProxy> lowerFields = upper.getFields();
         
-        String method = "";
-        String dvoOnlyFields = "";
+        String methodContent = "";
+        String lowerOnlyFields = "";
         String deepCopyFields = "";
 
-        String dvoName = dvo.getName();
-        method += format("public %s toDVO() {\n", dvoName);
-        method += format("\t%s dvo = new %s();\n", dvoName, dvoName);
-        for (FieldProxy field: dvoFields) {
+        String upperTypeName = upper.getName();
+        String upperVariableName = upper.getVariableName();
+        String lowerTypeName = lower.getName();
+        String methodName = createToLowerMethodName(lower);
+        String lowerVariableName = lower.getVariableName();
+        
+        methodContent += format("public %s %s(%s %s) {\n", lowerTypeName, methodName, upperTypeName, upperVariableName);
+        methodContent += format("\t%s %s = new %s();\n", lowerTypeName, lowerVariableName, lowerTypeName);
+        for (FieldProxy field: lowerFields) {
             String fieldName = field.getName();
-            FieldProxy svoField = svo.getField(fieldName);
+            FieldProxy upperField = upper.getField(fieldName);
 
-            if (svoField == null) {
-                dvoOnlyFields += format("\t//dvo.%s();\n", field.getSetterMethodName());
+            if (upperField == null) {
+                lowerOnlyFields += format("\t//%s.%s();\n", lowerVariableName, field.getSetterMethodName());
                 continue;
             }
-            if (svoField.needDeepCopy()) {
-                deepCopyFields += format("\t//dvo.%s();\n", field.getSetterMethodName());
+            if (upperField.needDeepCopy()) {
+                deepCopyFields += format("\t//%s.%s();\n", lowerVariableName, field.getSetterMethodName());
                 continue;
             } 
-            method += format("\tdvo.%s(%s());\n", field.getSetterMethodName(), field.getGetterMethodName());
+            methodContent += format("\t%s.%s(%s.%s());\n", lowerVariableName, field.getSetterMethodName(), upperVariableName, field.getGetterMethodName());
         }     
 
-        method += "\n\t//SKIP: DVO에만 있는 필드\n";
-        method += dvoOnlyFields;
-        method += "\t//SKIP: Deep Copy는 제외\n";
-        method += deepCopyFields;
-        method += "\treturn dvo;\n";
-        method += "}\n";
-        debug("\n\n%s\n\n", method);
-//        svo.createMethod(method);   
+        methodContent += format("\n\t//SKIP: %s에만 있는 필드\n", lowerTypeName);
+        methodContent += lowerOnlyFields;
+        methodContent += "\t//SKIP: Deep Copy는 제외\n";
+        methodContent += deepCopyFields;
+        methodContent += format("\treturn %s;\n", lowerVariableName);
+        methodContent += "}\n";
+        debug("\n\n%s\n\n", methodContent);
+        copyUtil.createMethod(methodContent);   
         
-        return "Created toDVO()";
+        return format("Created %s()", methodName);
+    }
+
+    public static String createToLowerMethodName(TypeProxy lower) {
+        return format("to%s", lower.getTypeString());
+    }
+
+    public static String createFromLowerMethodName(TypeProxy lower) {
+        return format("from%s", lower.getTypeString());
     }
 
     private static void debug(String format, Object...vars) {

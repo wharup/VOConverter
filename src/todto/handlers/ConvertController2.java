@@ -67,43 +67,58 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.ITextEditor;
 
-public class ConvertController {
+public class ConvertController2 {
 
     TypeProxy upperVoField = null;
     TypeProxy lowerVoField = null;
+    
+    /**
+     * 옛날 
+     */
+    public String generateConvertMethods_old(ExecutionEvent event) {
+        upperVoField = null;
+        lowerVoField = null;
+                   
+        List<ICompilationUnit> units = getSelectedSVOAndDVOFromProjectExplorer(event);
+        
+        makeSureSVOAndDVOAreFound(units);
 
-    TypeProxy copyUtil = null;
-    TypeProxy upperVo = null;
-    TypeProxy lowerVo = null;
-
-    public String generateConvertMethods(ExecutionEvent event) {
-        
-        List<ICompilationUnit> types = getSelectedClasses(event);
-        getSelectedCopyUtilAndSVOAndDVOFromProjectExplorer(types);
-        
-        makeSureCopyUtilAndSVOAndDVOAreFound(types);
-        
-        makeSureCopyUtilHasCopyMethods(types);
+        makeSureSVOMethodsAreNotExist(units);
 
         List<String> operations = new ArrayList<>();
-        operations.add(CodeGenerator.generateToLower(copyUtil, upperVo, lowerVo));
-        operations.add(CodeGenerator.generateFromLower(copyUtil, upperVo, lowerVo));
+//        operations.add(CodeGenerator.generateToDVO(dvo, svo));
+        operations.add(CodeGenerator33.generateFromDVO(lowerVoField, upperVoField));
+
+        return msgSuccessGenerateMethods(operations);
+    }
+
+    public String generateConvertMethods(ExecutionEvent event) {
+        TypeProxy copyUtil = null;
+        TypeProxy upperVo = null;
+        TypeProxy lowerVo = null;
+                   
+        List<ICompilationUnit> types = getSelectedClasses(event);
+
+        getSelectedCopyUtilAndSVOAndDVOFromProjectExplorer(types, copyUtil, upperVo, lowerVo);
+        
+        makeSureCopyUtilAndSVOAndDVOAreFound(types, copyUtil, upperVo, lowerVo);
+        
+        makeSureCopyUtilHasCopyMethods(types, copyUtil, upperVo, lowerVo);
+
+        List<String> operations = new ArrayList<>();
+//        operations.add(CodeGenerator.generateToDVO(dvo, svo));
+        operations.add(CodeGenerator33.generateFromDVO(lowerVo, upperVo));
 
         return msgSuccessGenerateMethods(operations);
     }
     
-    private void makeSureCopyUtilHasCopyMethods(List<ICompilationUnit> types) {
-        //LCustSVO;.fromDVO(QCustDVO;)V
-        String copyUtilFullName = copyUtil.getFullName().replace(".", "/");
-        String upperTypeName = upperVo.getName().replace(".", "/");
-        String lowerTypeName = lowerVo.getName().replace(".", "/");
-        String fromLowerMethodName = CodeGenerator.createFromLowerMethodName(lowerVo);
-        String fromLowerMethodSignature = format("L%s;.%s(Q%s;)V", copyUtilFullName, fromLowerMethodName, lowerTypeName);
+    private void makeSureCopyUtilHasCopyMethods(
+                            List<ICompilationUnit> types, 
+                            TypeProxy copyUtil, 
+                            TypeProxy upperVo,
+                            TypeProxy lowerVo) {
 
-        //LCustDVO;.toDVO(QCustSVO;)V
-        String toLowerMethodName = CodeGenerator.createToLowerMethodName(lowerVo);
-        String toLowerMethodSignature = format("L%s;.%s(Q%s;)V", copyUtilFullName, toLowerMethodName, upperTypeName);
-        if (copyUtil.hasMethod(fromLowerMethodSignature) && copyUtil.hasMethod(toLowerMethodSignature)) {
+        if (upperVoField.hasToDVO(lowerVoField) && upperVoField.hasFromDVO(lowerVoField)) {
             throw new ConvertException(msgHasAllMethodsAlready());
         }
 
@@ -266,10 +281,10 @@ public class ConvertController {
                         String name = type.getElementName().replace(".java", "");
                         if(name.endsWith("SVO")) {
                             print(type);
-                            upperVoField = new TypeProxy(type, "SVO");
+                            upperVoField = new TypeProxy(type, "");
                             copyUtilName = name.substring(0,  name.length() -3) + "CopyUtil";
                         } else if (name.endsWith("DVO")) {
-                            lowerVoField = new TypeProxy(type, "DVO");
+                            lowerVoField = new TypeProxy(type, "");
                         } else {
                             debug("UNIDENTIFIED TYPE FOUND! : %s", type.getElementName());
                         }
@@ -370,55 +385,83 @@ public class ConvertController {
         }
     }
 
+    private List<ICompilationUnit> getSelectedSVOAndDVOFromProjectExplorer(ExecutionEvent event) {
+        List<ICompilationUnit> types = getSelectedClasses(event);
+        int index = 0;
+        debug("----- ----- ----- ----- ----- -----");
+        for (ICompilationUnit type : types) {
+            String name = type.getElementName().replace(".java", "");
+            if(name.endsWith("SVO")) {
+                print(type);
+                upperVoField = new TypeProxy(type, "SVO");
+            } else if (name.endsWith("DVO")) {
+                lowerVoField = new TypeProxy(type, "DVO");
+            } else {
+                debug("UNIDENTIFIED TYPE FOUND! : %s", type.getElementName());
+            }
+        }
+        
+        return types;
+    }
 
     private void getSelectedCopyUtilAndSVOAndDVOFromProjectExplorer(
-                                List<ICompilationUnit> types) {
+                                List<ICompilationUnit> types, 
+                                TypeProxy copyUtil, 
+                                TypeProxy upperVo, 
+                                TypeProxy lowerVo) {
         
         ICompilationUnit svoFound = null;
         ICompilationUnit bvoFound = null;
         ICompilationUnit dvoFound = null;
         for (ICompilationUnit type : types) {
-            String name = type.getElementName().replace(".java", "").toUpperCase();
+            String name = type.getElementName().replace(".java", "");
             if(name.endsWith("SVO")) {
                 svoFound = type;
             } else if (name.endsWith("BVO")) {
                 bvoFound = type;
             } else if (name.endsWith("DVO")) {
                 dvoFound = type;
-            } else if (name.endsWith("COPYUTIL")) {
-                copyUtil = new TypeProxy(type, "COPYUTIL");
+            } else if (name.endsWith("CopyUtil")) {
+                copyUtil = new TypeProxy(type, "");
             } else {
                 debug("UNIDENTIFIED TYPE FOUND! : %s", type.getElementName());
             }
         }
 
         if (svoFound != null) {
-            upperVo = new TypeProxy(svoFound, "SVO"); 
+            upperVo = new TypeProxy(svoFound, ""); 
             if (bvoFound != null) {
-                lowerVo = new TypeProxy(bvoFound, "BVO");
+                lowerVo = new TypeProxy(bvoFound, ""); 
             } else if (dvoFound != null) {
-                lowerVo = new TypeProxy(dvoFound, "DVO");
+                lowerVo = new TypeProxy(dvoFound, ""); 
             }
         } else if (bvoFound != null) {
-            upperVo = new TypeProxy(bvoFound, "BVO");
+            upperVo = new TypeProxy(bvoFound, ""); 
             if (dvoFound != null) {
-                lowerVo = new TypeProxy(dvoFound, "DVO");
+                lowerVo = new TypeProxy(dvoFound, ""); 
             }
         }
         
         debug("----- ----- ----- ----- ----- -----");
-        debug(" UTIL: %s", getFullName(copyUtil));
-        debug(" UPPER: %s", getFullName(upperVo));
-        debug(" LOWER: %s", getFullName(lowerVo));
+        debug(" UTIL: %s\n", getFullName(copyUtil));
+        debug(" UPPER: %s\n", getFullName(upperVo));
+        debug(" LOWER: %s\n", getFullName(lowerVo));
         debug("----- ----- ----- ----- ----- -----");
     }
 
     private void makeSureCopyUtilAndSVOAndDVOAreFound(
-                            List<ICompilationUnit> types) {
+                            List<ICompilationUnit> types, 
+                            TypeProxy copyUtil, 
+                            TypeProxy upperVo, 
+                            TypeProxy lowerVo) {
         
         if (copyUtil == null || upperVo == null || lowerVo == null) {
             throw new ConvertException(
                         msgCannotFindSVODVO(types, copyUtil, upperVo, lowerVo));
+        }
+
+        if (upperVoField.hasToDVO(lowerVoField) && upperVoField.hasFromDVO(lowerVoField)) {
+            throw new ConvertException(msgHasAllMethodsAlready());
         }
     }
 
@@ -533,8 +576,11 @@ public class ConvertController {
 
     private String msgHasAllMethodsAlready() {
         String msg = "";
-        msg += format("CopyUtil에 생성할 메소드가 모두 존재합니다!\n");
+        msg += format("SVO에 생성할 메소드가 모두 존재합니다! (toDVO, fromDVO)\n");
         msg += format("\n");
+        msg += format("SVO = %s\n", getFullName(upperVoField));
+        msg += format("DVO = %s\n", getFullName(lowerVoField));
+        msg += "\n";
         return msg;
     }
     
