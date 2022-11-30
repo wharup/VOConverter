@@ -6,7 +6,12 @@ Bundle-Version: 1.0.0.qualifier
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.resources;bundle-version="3.15.0",
  org.eclipse.jdt.core;bundle-version="3.26.0",
- org.eclipse.jdt.core.manipulation;bundle-version="1.14.400"
+ org.eclipse.jdt.core.manipulation;bundle-version="1.14.400",
+ org.eclipse.ui.workbench.texteditor;bundle-version="3.16.100",
+ org.eclipse.jface.text;bundle-version="3.18.0",
+ org.eclipse.jdt.ui;bundle-version="3.23.0",
+ org.junit,
+ org.junit.jupiter.api
 Automatic-Module-Name: toDTO
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: org.eclipse.core.runtime

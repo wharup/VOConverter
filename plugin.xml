@@ -10,8 +10,13 @@
       </category>
       <command
             categoryId="toDTO.commands.category"
-            name="Sample Command"
+            name="Generate Converting Methods"
             id="toDTO.commands.sampleCommand">
+      </command>
+      <command
+            categoryId="toDTO.commands.category"
+            id="toDTO.commands.sampleCommand2"
+            name="Generate Converting Methods">
       </command>
    </extension>
    <extension
@@ -20,6 +25,10 @@
             class="todto.handlers.SampleHandler"
             commandId="toDTO.commands.sampleCommand">
       </handler>
+      <handler
+            class="todto.handlers.SampleHandler"
+            commandId="toDTO.commands.sampleCommand2">
+      </handler>
    </extension>
    <extension
          point="org.eclipse.ui.bindings">
@@ -27,7 +36,13 @@
             commandId="toDTO.commands.sampleCommand"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
             contextId="org.eclipse.ui.contexts.window"
-            sequence="M1+6">
+            sequence="M1+4">
+      </key>
+      <key
+            commandId="toDTO.commands.sampleCommand2"
+            contextId="org.eclipse.ui.textEditorScope"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+5">
       </key>
    </extension>
    <extension
@@ -35,13 +50,27 @@
       <menuContribution
             locationURI="menu:org.eclipse.ui.main.menu?after=additions">
          <menu
-               id="toDTO.menus.sampleMenu"
-               label="Sample Menu"
-               mnemonic="M">
+               id="toDTO.menus.VoConverter"
+               label="VoConverter"
+               mnemonic="V">
             <command
                   commandId="toDTO.commands.sampleCommand"
                   id="toDTO.menus.sampleCommand"
-                  mnemonic="S">
+               label="Generate CopyUtil"
+                  mnemonic="G"
+                  tooltip="Generate VO Converting Methods">
+            </command>
+         </menu>
+         <menu
+               id="toDTO.menus.VoConverter"
+               label="Convert To CopyUtil"
+               mnemonic="V">
+            <command
+                  commandId="toDTO.commands.sampleCommand2"
+                  id="toDTO.menus.sampleCommand"
+                  label="Convert To CopyUtil"
+                  mnemonic="C"
+                  tooltip="Generate VO Converting Methods">
             </command>
          </menu>
       </menuContribution>
@@ -53,7 +82,7 @@
                   id="toDTO.toolbars.sampleCommand"
                   commandId="toDTO.commands.sampleCommand"
                   icon="icons/sample.png"
-                  tooltip="Say hello world">
+                  tooltip="VO Converter">
             </command>
          </toolbar>
       </menuContribution>
